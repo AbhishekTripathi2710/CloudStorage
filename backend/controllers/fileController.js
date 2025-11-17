@@ -1,6 +1,28 @@
 const { pool } = require("../db/db");
 const cloudinary = require("../config/cloudinary");
 
+const extractPublicId = (cloudinaryUrl) => {
+    try {
+        const { pathname } = new URL(cloudinaryUrl);
+        const segments = pathname.split("/").filter(Boolean);
+        const uploadIndex = segments.indexOf("upload");
+        if (uploadIndex === -1) return null;
+
+        const remainder = segments.slice(uploadIndex + 1);
+        if (remainder[0] && /^v\d+$/.test(remainder[0])) remainder.shift();
+        if (!remainder.length) return null;
+
+        const lastSegment = remainder.pop() || "";
+        const lastWithoutExt = lastSegment.replace(/\.[^/.]+$/, "");
+        remainder.push(lastWithoutExt);
+
+        return remainder.join("/");
+    } catch (error) {
+        console.error("Failed to extract Cloudinary public_id:", error);
+        return null;
+    }
+};
+
 async function uploadFile(req, res) {
     const user_id = req.user.user_id;
     const { folder_id } = req.body;
@@ -9,10 +31,11 @@ async function uploadFile(req, res) {
         return res.status(400).json({ error: "No file uploaded" });
 
     try {
-        const cloudUrl = req.file.path;
         const fileName = req.file.originalname;
         const size = req.file.size;
         const fileType = req.file.mimetype;
+
+        const cloudUrl = req.file.path;
 
         const [result] = await pool.query(
             `INSERT INTO files (user_id, folder_id, name, file_type, source_link, size)
@@ -69,9 +92,12 @@ async function deleteFile(req, res) {
 
         const file = rows[0];
 
-        const publicId = file.source_link.split("/").pop().split(".")[0];
+        const publicId = extractPublicId(file.source_link);
+        if (!publicId) {
+            return res.status(500).json({ error: "Invalid Cloudinary public_id" });
+        }
 
-        await cloudinary.uploader.destroy(`cloud_storage_files/${publicId}`, {
+        await cloudinary.uploader.destroy(publicId, {
             resource_type: "raw"
         });
 

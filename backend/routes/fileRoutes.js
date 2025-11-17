@@ -1,25 +1,49 @@
 const express = require("express");
 const router = express.Router();
 const multer = require("multer");
-const {cloudinaryStorage, CloudinaryStorage} = require("multer-storage-cloudinary");
+const { CloudinaryStorage } = require("multer-storage-cloudinary");
+const path = require("path");
 const cloudinary = require("../config/cloudinary");
 const { requireAuth } = require("../middleware/authMiddleware");
+const {
+    uploadFile,
+    deleteFile,
+    listFiles
+} = require("../controllers/fileController");
+
+const normaliseExtension = (file) => {
+    const extFromName = path.extname(file.originalname || "").slice(1).toLowerCase();
+    if (extFromName) return extFromName;
+
+    const mimeSegment = (file.mimetype || "").split("/").pop();
+    return mimeSegment || undefined;
+};
+
+const sanitiseName = (file) => {
+    const baseName = path.parse(file.originalname || "").name || "file";
+    return baseName.replace(/[^\w\-]+/g, "_");
+};
 
 const storage = new CloudinaryStorage({
-    cloudinary: cloudinary,
-    params: async (req,res) => {
+    cloudinary,
+    params: async (req, file) => {
+        const format = normaliseExtension(file);
+        const publicId = `${Date.now()}_${sanitiseName(file)}`;
+
         return {
             folder: "cloud_storage_files",
-            resource_type: "auto"
+            resource_type: "raw",
+            type: "upload",
+            public_id: publicId,
+            ...(format && { format })
         };
     }
 });
 
-const upload = multer({storage});
+const upload = multer({ storage });
 
-router.post("/upload", requireAuth, );
-router.delete("/:file_id",requireAuth,);
-router.get("/:folder_id",requireAuth,);
+router.post("/upload", requireAuth, upload.single("file"), uploadFile);
+router.delete("/:file_id", requireAuth, deleteFile);
+router.get("/:folder_id", requireAuth, listFiles);
 
 module.exports = router;
-
