@@ -7,7 +7,6 @@ export const AuthProvider = ({ children }) => {
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
-    // on first load (later we will add "check session")
     useEffect(() => {
         setLoading(false);
     }, []);
