@@ -115,4 +115,116 @@ async function deleteFile(req, res) {
     }
 }
 
-module.exports = { uploadFile, listFiles, deleteFile };
+async function moveFile(req,res){
+    const user_id = req.user.user_id;
+    const {file_id, target_folder_id} = req.body;
+
+    if(!file_id || !target_folder_id === undefined){
+        return res.status(400).json({error: "file_id and target_folder_id required"});
+    }
+
+    try{
+        const [rows] = await pool.query(
+            "SELECT * FROM files WHERE file_id = ? AND user_id = ?",
+            [file_id,user_id]
+        );
+
+        if(!rows.length) return res.status(401).json({error: "File not Found"});
+
+        await pool.query(
+            "UPDATE files SET folder_id = ? WHERE file_id = ?",
+            [target_folder_id,file_id]
+        );
+
+        res.json({
+            success: true,
+            message: "File moved successfully"
+        });
+    }catch(err){
+        console.error(err);
+        return res.status(500).json({error:"Server error"});
+    }
+}
+
+async function renameFile(req,res){
+    const user_id = req.user.user_id;
+    const {file_id, new_name} = req.body;
+
+    if(!file_id || !new_name) return res.status(401).json({error: "File_id and Name are required"});
+
+    try{
+        await pool.query(
+            "UPDATE files SET name = ? WHERE file_id = ?",
+            [new_name, file_id]
+        );
+
+        res.json({
+            success: true,
+            message: "File renamed"
+        })
+    }catch(err){
+        console.error(err);
+        return res.status(500).json({error: "Server error"});
+    }
+}
+
+async function searchFiles(req, res) {
+
+    const user_id = req.user.user_id;
+    let { query, type, folder_id } = req.query;
+
+    try {
+        let sql = "SELECT * FROM files WHERE user_id = ?";
+        let params = [user_id];
+
+        if (query && query.trim() !== "") {
+            sql += " AND name LIKE ?";
+            params.push(`%${query.trim()}%`);
+        }
+
+        if (type && type.trim() !== "") {
+            type = type.toLowerCase();
+
+            if (type === "image") {
+                sql += " AND file_type LIKE 'image/%'";
+            }
+            else if (type === "video") {
+                sql += " AND file_type LIKE 'video/%'";
+            }
+            else if (type === "pdf") {
+                sql += " AND file_type LIKE '%pdf%'";
+            }
+            else {
+                sql += " AND file_type LIKE ?";
+                params.push(`%${type}%`);
+            }
+        }
+
+        if (folder_id !== undefined && folder_id !== "") {
+            if (folder_id === "root") {
+                sql += " AND folder_id IS NULL";
+            } else {
+                sql += " AND folder_id = ?";
+                params.push(folder_id);
+            }
+        }
+
+        sql += " ORDER BY uploaded_at DESC";
+
+        const [rows] = await pool.query(sql, params);
+
+        return res.json({
+            success: true,
+            count: rows.length,
+            files: rows
+        });
+
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Search failed" });
+    }
+}
+
+
+
+module.exports = { uploadFile, listFiles, deleteFile, moveFile, renameFile, searchFiles};
