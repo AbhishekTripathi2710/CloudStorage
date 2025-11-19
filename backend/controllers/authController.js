@@ -106,4 +106,24 @@ async function logout(req, res) {
     return res.json({ ok: true });
 }
 
-module.exports = { login, logout, register };
+async function getProfile(req, res) {
+    const user_id = req.user.user_id;
+
+    try {
+        const [rows] = await pool.query(
+            "SELECT user_id, username, email FROM users WHERE user_id = ?",
+            [user_id]
+        );
+
+        if (!rows.length) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        return res.json({ user: rows[0] });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ error: "Server error" });
+    }
+}
+
+module.exports = { login, logout, register, getProfile };

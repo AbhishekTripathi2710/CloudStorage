@@ -8,7 +8,18 @@ export const AuthProvider = ({ children }) => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        setLoading(false);
+        const fetchUser = async () => {
+            try {
+                const res = await api.get("/me");
+                setUser(res.data.user);
+            } catch (err) {
+                setUser(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUser();
     }, []);
 
     const login = async (email, password) => {
@@ -24,8 +35,11 @@ export const AuthProvider = ({ children }) => {
     };
 
     const logout = async () => {
-        await api.post("/logout");
-        setUser(null);
+        try {
+            await api.post("/logout");
+        } finally {
+            setUser(null);
+        }
     };
 
     return (

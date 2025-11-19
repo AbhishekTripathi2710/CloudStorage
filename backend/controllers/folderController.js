@@ -50,18 +50,22 @@ async function listFolders(req, res) {
 
 async function listFolderContent(req,res){
     const user_id = req.user.user_id;
-    const folder_id = req.params.folder_id;
+    const rawFolderId = req.params.folder_id;
+    const folder_id = rawFolderId === "root" ? null : rawFolderId;
 
     try{
-        const [folders] = await pool.query(
-            "SELECT * FROM folders WHERE parent_id = ? AND user_id = ?",
-            [folder_id,user_id]
-        );
+        const folderQuery = folder_id === null
+            ? "SELECT * FROM folders WHERE parent_id IS NULL AND user_id = ?"
+            : "SELECT * FROM folders WHERE parent_id = ? AND user_id = ?";
+        const folderParams = folder_id === null ? [user_id] : [folder_id,user_id];
 
-        const [files] = await pool.query(
-            "SELECT * FROM files WHERE folder_id = ? AND user_id = ?",
-            [folder_id,user_id]
-        );
+        const filesQuery = folder_id === null
+            ? "SELECT * FROM files WHERE folder_id IS NULL AND user_id = ?"
+            : "SELECT * FROM files WHERE folder_id = ? AND user_id = ?";
+        const fileParams = folder_id === null ? [user_id] : [folder_id,user_id];
+
+        const [folders] = await pool.query(folderQuery, folderParams);
+        const [files] = await pool.query(filesQuery, fileParams);
 
         return res.json({folders,files});
     }catch(err){

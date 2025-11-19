@@ -11,12 +11,17 @@ export const FileProvider = ({ children }) => {
     const loadFolder = async (folderId = "root") => {
         setCurrentFolder(folderId);
 
-        const folderRes = await api.get(`/folders/${folderId}`);
-        const fileRes = await api.get(`/files/${folderId}`);
+        try {
+            const folderRes = await api.get(`/folders/${folderId}`);
+            const fileRes = await api.get(`/files/${folderId}`);
 
-        setFolders(folderRes.data.folders || []);
-
-        setFiles(fileRes.data || []);
+            setFolders(folderRes.data.folders || []);
+            setFiles(fileRes.data || []);
+        } catch (err) {
+            console.error("Failed to load folder", err);
+            setFolders([]);
+            setFiles([]);
+        }
     };
 
     const uploadFile = async (file, folderId = currentFolder) => {

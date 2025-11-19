@@ -25,7 +25,11 @@ const extractPublicId = (cloudinaryUrl) => {
 
 async function uploadFile(req, res) {
     const user_id = req.user.user_id;
-    const { folder_id } = req.body;
+    let folder_id = req.body.folder_id;
+
+    if (!folder_id || folder_id === "root") {
+        folder_id = null;
+    }
 
     if (!req.file)
         return res.status(400).json({ error: "No file uploaded" });
@@ -63,13 +67,17 @@ async function uploadFile(req, res) {
 
 async function listFiles(req, res) {
     const user_id = req.user.user_id;
-    const { folder_id } = req.params;
+    const rawFolderId = req.params.folder_id;
+    const folderId = rawFolderId === "root" ? null : rawFolderId;
 
     try {
-        const [files] = await pool.query(
-            "SELECT * FROM files WHERE user_id = ? AND folder_id = ?",
-            [user_id, folder_id]
-        );
+        const query =
+            folderId === null
+                ? "SELECT * FROM files WHERE user_id = ? AND folder_id IS NULL"
+                : "SELECT * FROM files WHERE user_id = ? AND folder_id = ?";
+        const params = folderId === null ? [user_id] : [user_id, folderId];
+
+        const [files] = await pool.query(query, params);
 
         return res.json(files);
     } catch (err) {
@@ -118,8 +126,9 @@ async function deleteFile(req, res) {
 async function moveFile(req,res){
     const user_id = req.user.user_id;
     const {file_id, target_folder_id} = req.body;
+    const destinationFolderId = target_folder_id === "root" ? null : target_folder_id;
 
-    if(!file_id || !target_folder_id === undefined){
+    if(!file_id || destinationFolderId === undefined){
         return res.status(400).json({error: "file_id and target_folder_id required"});
     }
 
@@ -129,11 +138,22 @@ async function moveFile(req,res){
             [file_id,user_id]
         );
 
-        if(!rows.length) return res.status(401).json({error: "File not Found"});
+        if(!rows.length) return res.status(404).json({error: "File not found"});
+
+        if (destinationFolderId) {
+            const [folderRows] = await pool.query(
+                "SELECT folder_id FROM folders WHERE folder_id = ? AND user_id = ?",
+                [destinationFolderId, user_id]
+            );
+
+            if (!folderRows.length) {
+                return res.status(404).json({ error: "Target folder not found" });
+            }
+        }
 
         await pool.query(
-            "UPDATE files SET folder_id = ? WHERE file_id = ?",
-            [target_folder_id,file_id]
+            "UPDATE files SET folder_id = ? WHERE file_id = ? AND user_id = ?",
+            [destinationFolderId, file_id, user_id]
         );
 
         res.json({
@@ -150,13 +170,19 @@ async function renameFile(req,res){
     const user_id = req.user.user_id;
     const {file_id, new_name} = req.body;
 
-    if(!file_id || !new_name) return res.status(401).json({error: "File_id and Name are required"});
+    if(!file_id || !new_name || typeof new_name !== "string" || !new_name.trim()) {
+        return res.status(400).json({error: "Valid file_id and new_name are required"});
+    }
 
     try{
-        await pool.query(
-            "UPDATE files SET name = ? WHERE file_id = ?",
-            [new_name, file_id]
+        const [result] = await pool.query(
+            "UPDATE files SET name = ? WHERE file_id = ? AND user_id = ?",
+            [new_name.trim(), file_id, user_id]
         );
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "File not found" });
+        }
 
         res.json({
             success: true,
