@@ -6,6 +6,7 @@ import FolderItem from "../components/FolderItem";
 import FileItem from "../components/FileItem";
 import UploadModal from "../components/UploadModal";
 import CreateFolderModal from "../components/CreateFolderModal";
+import StorageCard from "../components/StorageCard";
 
 export default function Dashboard() {
     const { folders, files, loadFolder } = useFiles();
@@ -26,7 +27,7 @@ export default function Dashboard() {
                 {/* Top Bar */}
                 <div className="flex justify-between items-center mb-6">
                     <SearchBar />
-
+                    
                     <div className="flex gap-3">
                         <button
                             onClick={() => setIsCreateFolderOpen(true)}
@@ -54,7 +55,7 @@ export default function Dashboard() {
                     open={isCreateFolderOpen}
                     onClose={() => setIsCreateFolderOpen(false)}
                 />
-
+                <StorageCard></StorageCard>
                 {/* Folders */}
                 <h2 className="text-xl font-semibold mb-3">Folders</h2>
                 <div className="grid grid-cols-6 gap-4 mb-6">

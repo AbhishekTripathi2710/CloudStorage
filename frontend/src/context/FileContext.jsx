@@ -7,11 +7,25 @@ export const FileProvider = ({ children }) => {
     const [currentFolder, setCurrentFolder] = useState("root");
     const [files, setFiles] = useState([]);
     const [folders, setFolders] = useState([]);
+    const [storage,setStorage] = useState({allocated: 0, used: 0});
+
+    const loadStorage = async () => {
+        try{
+            const res = await api.get("/files/storage");
+            setStorage({
+                allocated: res.data.storage_allocated,
+                used: res.data.storage_used
+            });
+        }catch(err){
+            console.error("localStorage error",err);
+        }
+    }
 
     const loadFolder = async (folderId = "root") => {
         setCurrentFolder(folderId);
 
         try {
+            await loadStorage();
             const folderRes = await api.get(`/folders/${folderId}`);
             const fileRes = await api.get(`/files/${folderId}`);
 
@@ -64,7 +78,8 @@ export const FileProvider = ({ children }) => {
                 uploadFile,
                 moveFile,
                 renameFile,
-                searchFiles
+                searchFiles,
+                storage
             }}
         >
             {children}

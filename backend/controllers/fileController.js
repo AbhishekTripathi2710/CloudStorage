@@ -251,6 +251,22 @@ async function searchFiles(req, res) {
     }
 }
 
+async function getStorage(req,res) {
+    const user_id = req.user.user_id;
+    try{
+        const [rows] = await pool.query(
+            "SELECT storage_allocated, storage_used FROM users WHERE user_id = ? ",
+            [user_id]
+        );
+        if(!rows.length) return res.status(404).json({error: "User not found"})
+        const {storage_allocated, storage_used} = rows[0];
+        return res.json({storage_allocated, storage_used});
+    }catch(err){
+        console.error(err);
+        return res.status(500).json({error: "Server error"});
+    }
+}
 
 
-module.exports = { uploadFile, listFiles, deleteFile, moveFile, renameFile, searchFiles};
+
+module.exports = { uploadFile, listFiles, deleteFile, moveFile, renameFile, searchFiles, getStorage};

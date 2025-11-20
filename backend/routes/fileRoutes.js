@@ -11,7 +11,8 @@ const {
     listFiles,
     moveFile,
     renameFile,
-    searchFiles
+    searchFiles,
+    getStorage
 } = require("../controllers/fileController");
 
 const normaliseExtension = (file) => {
@@ -46,6 +47,7 @@ const storage = new CloudinaryStorage({
 const upload = multer({ storage });
 
 router.get("/search", requireAuth, searchFiles)
+router.get("/storage",requireAuth,getStorage);
 router.post("/upload", requireAuth, upload.single("file"), uploadFile);
 router.delete("/:file_id", requireAuth, deleteFile);
 router.post("/move",requireAuth,moveFile);
