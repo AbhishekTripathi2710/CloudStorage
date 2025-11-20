@@ -25,26 +25,42 @@ export default function CreateFolderModal({ open, onClose }) {
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center">
-            <div className="bg-white p-6 w-96 rounded-lg">
-                <h2 className="text-xl font-semibold mb-4">Create Folder</h2>
+        <div 
+            className="fixed inset-0 bg-black/50 flex justify-center items-center z-50"
+            onClick={(e) => {
+                if (e.target === e.currentTarget) {
+                    onClose();
+                }
+            }}
+        >
+            <div className="bg-white p-6 w-96 rounded-xl shadow-2xl">
+                <h2 className="text-xl font-semibold mb-4 text-gray-800">Create New Folder</h2>
 
                 <input
                     type="text"
-                    placeholder="Folder name"
+                    placeholder="Enter folder name"
                     value={folderName}
                     onChange={(e) => setFolderName(e.target.value)}
-                    className="w-full border p-2 mb-4 rounded"
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            handleCreate();
+                        }
+                    }}
+                    className="w-full border-2 border-gray-200 focus:border-red-500 focus:ring-2 focus:ring-red-200 p-3 mb-6 rounded-lg outline-none transition-all"
+                    autoFocus
                 />
 
                 <div className="flex justify-end gap-3">
-                    <button onClick={onClose} className="px-4 py-2 bg-gray-300 rounded">
+                    <button 
+                        onClick={onClose} 
+                        className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg font-medium transition-colors"
+                    >
                         Cancel
                     </button>
 
                     <button
                         onClick={handleCreate}
-                        className="px-4 py-2 bg-green-600 text-white rounded"
+                        className="px-5 py-2.5 bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 text-white rounded-lg font-medium shadow-md transition-all"
                     >
                         Create
                     </button>

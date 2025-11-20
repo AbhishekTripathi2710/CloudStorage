@@ -11,44 +11,61 @@ function niceBytes(bytes) {
 
 export default function StorageCard(){
   const { storage } = useFiles();
+
   const allocated = Number(storage.allocated) || 0;
   const used = Number(storage.used) || 0;
   const percent = allocated > 0 ? Math.min(100, Math.round((used / allocated) * 100)) : 0;
 
-  const size = 96;
-  const stroke = 8;
+  const size = 120;
+  const stroke = 10;
   const radius = (size - stroke) / 2;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (percent / 100) * circumference;
 
   return (
-    <div className="bg-white rounded-lg p-4 shadow-sm flex items-center gap-4 max-w-[322px] mb-[2rem] mt-[1rem]">
+    <div className="bg-gradient-to-br from-red-500 to-pink-500 rounded-xl p-6 shadow-lg flex items-center gap-6 text-white">
       <svg width={size} height={size} className="flex-none">
         <defs>
-          <linearGradient id="g1" x1="0%" x2="100%" y1="0%" y2="0%">
-            <stop offset="0%" stopColor="#60a5fa" />
-            <stop offset="100%" stopColor="#3b82f6" />
+          <linearGradient id="storageGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.3" />
+            <stop offset="100%" stopColor="#ffffff" stopOpacity="0.8" />
           </linearGradient>
         </defs>
         <g transform={`translate(${size/2}, ${size/2})`}>
-          <circle r={radius} fill="transparent" stroke="#eef2f7" strokeWidth={stroke} />
+          <circle 
+            r={radius} 
+            fill="transparent" 
+            stroke="rgba(255,255,255,0.2)" 
+            strokeWidth={stroke} 
+          />
           <circle
             r={radius}
             fill="transparent"
-            stroke="url(#g1)"
+            stroke="url(#storageGradient)"
             strokeWidth={stroke}
             strokeLinecap="round"
             strokeDasharray={`${circumference} ${circumference}`}
             strokeDashoffset={offset}
             transform={`rotate(-90)`}
+            style={{ transition: 'stroke-dashoffset 0.5s ease' }}
           />
         </g>
+        <text
+          x={size/2}
+          y={size/2}
+          textAnchor="middle"
+          dominantBaseline="middle"
+          className="text-2xl font-bold fill-white"
+          style={{ fontSize: '24px', fontWeight: 'bold' }}
+        >
+          {percent}%
+        </text>
       </svg>
 
-      <div>
-        <div className="text-xs text-gray-500">Available Storage</div>
-        <div className="text-lg font-semibold">{niceBytes(allocated - used)} <span className="text-sm text-gray-500">left</span></div>
-        <div className="text-sm text-gray-500 mt-1">{percent}% used • {niceBytes(used)} / {niceBytes(allocated)}</div>
+      <div className="flex-1">
+        <div className="text-sm text-red-100 mb-1">Available Storage</div>
+        <div className="text-2xl font-bold mb-1">{niceBytes(allocated - used)} / {niceBytes(allocated)}</div>
+        <div className="text-sm text-red-100 opacity-90">{percent}% Space used</div>
       </div>
     </div>
   );
