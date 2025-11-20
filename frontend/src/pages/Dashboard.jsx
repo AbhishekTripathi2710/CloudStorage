@@ -7,6 +7,7 @@ import FileItem from "../components/FileItem";
 import UploadModal from "../components/UploadModal";
 import CreateFolderModal from "../components/CreateFolderModal";
 import StorageCard from "../components/StorageCard";
+import RecentFiles from "../components/recentFiles";
 
 export default function Dashboard() {
     const { folders, files, loadFolder } = useFiles();
@@ -55,7 +56,10 @@ export default function Dashboard() {
                     open={isCreateFolderOpen}
                     onClose={() => setIsCreateFolderOpen(false)}
                 />
+                <div className="flex justify-between">
                 <StorageCard></StorageCard>
+                <RecentFiles></RecentFiles>
+                </div>
                 {/* Folders */}
                 <h2 className="text-xl font-semibold mb-3">Folders</h2>
                 <div className="grid grid-cols-6 gap-4 mb-6">
@@ -71,6 +75,8 @@ export default function Dashboard() {
                         <FileItem key={file.file_id} file={file} />
                     ))}
                 </div>
+
+                
             </div>
         </div>
     );

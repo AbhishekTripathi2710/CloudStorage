@@ -267,6 +267,19 @@ async function getStorage(req,res) {
     }
 }
 
+async function recentFiles(req,res){
+    const user_id = req.user.user_id;
+    try{
+        const [rows] = await pool.query(
+            "SELECT * FROM files WHERE user_id = ? ORDER BY uploaded_at DESC LIMIT 10",
+            [user_id]
+        );
+        res.json({files: rows});
+    }catch(err){
+        console.error(err);
+        return res.status(500).json({error:"Server error"})
+    }
+}
 
 
-module.exports = { uploadFile, listFiles, deleteFile, moveFile, renameFile, searchFiles, getStorage};
+module.exports = { uploadFile, listFiles, deleteFile, moveFile, renameFile, searchFiles, getStorage, recentFiles};

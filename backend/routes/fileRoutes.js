@@ -12,7 +12,8 @@ const {
     moveFile,
     renameFile,
     searchFiles,
-    getStorage
+    getStorage,
+    recentFiles
 } = require("../controllers/fileController");
 
 const normaliseExtension = (file) => {
@@ -48,6 +49,7 @@ const upload = multer({ storage });
 
 router.get("/search", requireAuth, searchFiles)
 router.get("/storage",requireAuth,getStorage);
+router.get("/recent",requireAuth, recentFiles)
 router.post("/upload", requireAuth, upload.single("file"), uploadFile);
 router.delete("/:file_id", requireAuth, deleteFile);
 router.post("/move",requireAuth,moveFile);
